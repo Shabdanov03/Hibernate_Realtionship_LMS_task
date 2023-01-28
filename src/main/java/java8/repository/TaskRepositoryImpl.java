@@ -14,11 +14,11 @@ import java.util.List;
 /**
  * Shabdanov Ilim
  **/
-public class TaskRepositoryImpl implements TaskRepository,AutoCloseable{
+public class TaskRepositoryImpl implements TaskRepository, AutoCloseable {
     private final EntityManagerFactory entityManagerFactory = HibernateConfig.getManagerFactory();
 
     @Override
-    public String saveTask(Task task,Long lessonId) {
+    public String saveTask(Task task, Long lessonId) {
         try {
             List<Task> taskList = new ArrayList<>();
             EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -32,9 +32,10 @@ public class TaskRepositoryImpl implements TaskRepository,AutoCloseable{
             entityManager.getTransaction().commit();
             entityManager.close();
             return task.getName() + "Successfully saved....";
-        }catch (HibernateException e){
+        } catch (HibernateException e) {
             System.out.println(e.getMessage());
-        }return null;
+        }
+        return null;
     }
 
     @Override
@@ -49,7 +50,7 @@ public class TaskRepositoryImpl implements TaskRepository,AutoCloseable{
             entityManager.getTransaction().commit();
             entityManager.close();
             return "Successfully updated.....!";
-        }catch (HibernateException e){
+        } catch (HibernateException e) {
             System.out.println(e.getMessage());
         }
         return null;
@@ -66,7 +67,7 @@ public class TaskRepositoryImpl implements TaskRepository,AutoCloseable{
             entityManager.getTransaction().commit();
             entityManager.close();
             return taskList;
-        }catch (HibernateException e){
+        } catch (HibernateException e) {
             System.out.println(e.getMessage());
         }
         return null;
@@ -75,14 +76,29 @@ public class TaskRepositoryImpl implements TaskRepository,AutoCloseable{
     @Override
     public String deleteTaskById(Long taskId) {
         try {
-            EntityManager entityManager =entityManagerFactory.createEntityManager();
+            EntityManager entityManager = entityManagerFactory.createEntityManager();
             entityManager.getTransaction().begin();
             Task task = entityManager.find(Task.class, taskId);
+
+            List<Lesson> lessons = entityManager
+                    .createQuery("select l from Lesson l", Lesson.class)
+                    .getResultList();
+            Lesson lesson1 = null;
+            for (Lesson lesson : lessons) {
+                for (Task lessonTask : lesson.getTasks()) {
+                    if (lessonTask.getId().equals(taskId)) {
+                        lesson1 = lesson;
+                    }
+                }
+            }
+            if (lesson1 != null) {
+                lesson1.getTasks().remove(task);
+            }
             entityManager.remove(task);
             entityManager.getTransaction().commit();
             entityManager.close();
             return "Successfully deleted by id......";
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
         return "Wrong input ....!";
